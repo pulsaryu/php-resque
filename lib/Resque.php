@@ -70,28 +70,34 @@ class Resque
 		}
 
 		$server = self::$redisServer;
-		if (empty($server)) {
-			$server = 'localhost:6379';
-		}
 
-		if(is_array($server)) {
-			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
-			self::$redis = new Resque_RedisCluster($server);
-		}
-		else {
-			if (strpos($server, 'unix:') === false) {
-				list($host, $port) = explode(':', $server);
-			}
-			else {
-				$host = $server;
-				$port = null;
-			}
-			require_once dirname(__FILE__) . '/Resque/Redis.php';
-			self::$redis = new Resque_Redis($host, $port);
-		}
+        if (is_callable(self::$redisServer)) {
+            self::$redis = call_user_func(self::$redisServer, self::$redisDatabase);
+        } else {
+            if (empty($server)) {
+                $server = 'localhost:6379';
+            }
 
-		self::$redis->select(self::$redisDatabase);
-		return self::$redis;
+            if(is_array($server)) {
+                require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
+                self::$redis = new Resque_RedisCluster($server);
+            }
+            else {
+                if (strpos($server, 'unix:') === false) {
+                    list($host, $port) = explode(':', $server);
+                }
+                else {
+                    $host = $server;
+                    $port = null;
+                }
+                require_once dirname(__FILE__) . '/Resque/Redis.php';
+                self::$redis = new Resque_Redis($host, $port);
+            }
+
+            self::$redis->select(self::$redisDatabase);
+        }
+
+        return self::$redis;
 	}
 
 	/**
